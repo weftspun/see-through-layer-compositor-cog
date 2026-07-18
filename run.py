@@ -2,6 +2,7 @@
 run() calls to its `composite_layers` MCP tool over HTTP."""
 
 import base64
+import os
 import subprocess
 import tempfile
 import time
@@ -15,10 +16,21 @@ from cog import BaseRunner, Input, Path
 RELEASE_BIN = "/opt/see_through_compositor"
 BASE_URL = "http://localhost:5244"
 
+# Several of NVSHMEM's plugin .so files lack a proper SONAME, so ldconfig
+# silently skips them — LD_LIBRARY_PATH resolves all four dirs uniformly
+# regardless. See cog.yaml's build.run for why these are needed at all.
+EXTRA_LIB_DIRS = [
+    "/opt/cuda-extra-libs/nvidia/nvshmem/lib",
+    "/opt/cuda-extra-libs/nvidia/cuda_nvrtc/lib",
+    "/opt/cuda-extra-libs/nvidia/nccl/lib",
+    "/opt/cuda-extra-libs/nvidia/cudnn/lib",
+]
+
 
 class Runner(BaseRunner):
     def setup(self) -> None:
-        self.proc = subprocess.Popen([RELEASE_BIN, "start"])
+        env = {**os.environ, "LD_LIBRARY_PATH": ":".join(EXTRA_LIB_DIRS)}
+        self.proc = subprocess.Popen([RELEASE_BIN, "start"], env=env)
         self._wait_healthy(timeout=60)
 
     def _wait_healthy(self, timeout):

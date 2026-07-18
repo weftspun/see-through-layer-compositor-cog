@@ -15,14 +15,14 @@ build:
     # change (`mix release`, then `gh release upload`).
     - curl -fsSL -o /opt/see_through_compositor https://github.com/weftspun/see-through-layer-compositor-cog/releases/download/v0.1.0/see_through_compositor_linux_x86_64
     - chmod +x /opt/see_through_compositor
-    # EXLA's precompiled CUDA XLA extension needs two runtime libs the cog
-    # cuda12.4 base image doesn't ship: NVSHMEM and NVRTC builtins, both
-    # pinned to specific versions by deps/xla's HERMETIC_*_VERSION for the
-    # cuda12 target (see deps/xla/lib/xla.ex) — newer than this image's
-    # CUDA 12.4 toolkit. Both ship as PyPI NVIDIA wheels.
-    - pip install --no-deps --target /opt/cuda-extra-libs nvidia-nvshmem-cu12==3.3.9 nvidia-cuda-nvrtc-cu12==12.9.86
-    - echo /opt/cuda-extra-libs/nvidia/nvshmem/lib > /etc/ld.so.conf.d/exla-extra.conf
-    - echo /opt/cuda-extra-libs/nvidia/cuda_nvrtc/lib >> /etc/ld.so.conf.d/exla-extra.conf
-    - ldconfig
+    # EXLA's precompiled CUDA XLA extension needs four runtime libs the cog
+    # cuda12.4 base image doesn't ship — NVSHMEM, NVRTC builtins, NCCL, and
+    # cuDNN — each pinned to a specific version by deps/xla's
+    # HERMETIC_*_VERSION for the cuda12 target (see deps/xla/lib/xla.ex),
+    # newer than this image's CUDA 12.4 toolkit. All ship as PyPI NVIDIA
+    # wheels. run.py puts these on LD_LIBRARY_PATH rather than registering
+    # them with ldconfig: several of NVSHMEM's plugin .so files lack a
+    # proper SONAME, so ldconfig silently skips them.
+    - pip install --no-deps --target /opt/cuda-extra-libs nvidia-nvshmem-cu12==3.3.9 nvidia-cuda-nvrtc-cu12==12.9.86 nvidia-nccl-cu12==2.27.7 nvidia-cudnn-cu12==9.8.0.87
 
 run: "run.py:Runner"
