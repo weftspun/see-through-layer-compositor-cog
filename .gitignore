@@ -4,9 +4,16 @@
 /doc/
 /.fetch
 erl_crash.dump
+erl_crash.dump.*
 *.ez
 *.beam
 /config/*.secret.exs
 .elixir_ls/
 __pycache__/
 /.cog/
+/burrito_out/
+/priv/plts/
+*.tar.xz
+*.tar.gz
+*.whl
+.DS_Store

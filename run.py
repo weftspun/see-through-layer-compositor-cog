@@ -10,10 +10,9 @@ from pathlib import Path as PyPath
 import requests
 from cog import BaseRunner, Input, Path
 
-# Built during image `build.run` (see cog.yaml) from the pushed repo, not
-# from /src — Cog copies project source into /src only after build.run
-# commands finish, so the release can't be compiled from there at build time.
-RELEASE_BIN = "/build-src/_build/prod/rel/see_through_compositor/bin/see_through_compositor"
+# Fetched during image `build.run` (see cog.yaml) — a self-contained Burrito
+# executable published as a GitHub release, not compiled in this image.
+RELEASE_BIN = "/opt/see_through_compositor"
 BASE_URL = "http://localhost:5244"
 
 

@@ -4,29 +4,25 @@ build:
   gpu: true
   cuda: "12.4"
   system_packages:
-    - unzip
     - curl
-    - git
   python_version: "3.12"
   python_requirements: requirements.txt
   run:
-    # mix.exs requires Elixir ~> 1.20, which needs OTP 27+. Ubuntu 22.04's
-    # apt "erlang"/"elixir" packages are OTP 24 / Elixir 1.12, too old for
-    # either, so install precompiled builds of both directly.
-    - curl -fsSL -o /tmp/otp.tar.gz https://builds.hex.pm/builds/otp/ubuntu-22.04/OTP-29.0.3.tar.gz
-    - mkdir -p /usr/local/lib/erlang && tar -xzf /tmp/otp.tar.gz -C /usr/local/lib/erlang --strip-components=1 && rm /tmp/otp.tar.gz
-    - cd /usr/local/lib/erlang && ./Install -minimal /usr/local/lib/erlang
-    - for f in /usr/local/lib/erlang/bin/*; do ln -sf "$f" /usr/local/bin/; done
-    - curl -fsSL -o /tmp/elixir-otp-29.zip https://github.com/elixir-lang/elixir/releases/download/v1.20.2/elixir-otp-29.zip
-    - unzip -q /tmp/elixir-otp-29.zip -d /usr/local && rm /tmp/elixir-otp-29.zip
-    # Cog's build.run commands execute before the project source is copied
-    # into the image (COPY . /src happens last, unconditionally, and cog.yaml
-    # has no field to reorder that) — so the release is built here from the
-    # already-pushed repo, keeping the compile out of setup() at container
-    # start. Any local change must be pushed before `cog build` picks it up.
-    - git clone --depth 1 https://github.com/weftspun/see-through-layer-compositor-cog /build-src
-    - cd /build-src && mix local.hex --force && mix local.rebar --force
-    - cd /build-src && XLA_TARGET=cuda12 mix deps.get
-    - cd /build-src && XLA_TARGET=cuda12 MIX_ENV=prod mix release
+    # Self-contained executable (bundles ERTS/BEAM via Burrito — see the
+    # release `steps`/`burrito` config in mix.exs) built and published from
+    # this repo. No Elixir/Erlang/build toolchain needed in this image;
+    # rebuild and re-upload the release asset after any lib/ or mix.exs
+    # change (`mix release`, then `gh release upload`).
+    - curl -fsSL -o /opt/see_through_compositor https://github.com/weftspun/see-through-layer-compositor-cog/releases/download/v0.1.0/see_through_compositor_linux_x86_64
+    - chmod +x /opt/see_through_compositor
+    # EXLA's precompiled CUDA XLA extension needs two runtime libs the cog
+    # cuda12.4 base image doesn't ship: NVSHMEM and NVRTC builtins, both
+    # pinned to specific versions by deps/xla's HERMETIC_*_VERSION for the
+    # cuda12 target (see deps/xla/lib/xla.ex) — newer than this image's
+    # CUDA 12.4 toolkit. Both ship as PyPI NVIDIA wheels.
+    - pip install --no-deps --target /opt/cuda-extra-libs nvidia-nvshmem-cu12==3.3.9 nvidia-cuda-nvrtc-cu12==12.9.86
+    - echo /opt/cuda-extra-libs/nvidia/nvshmem/lib > /etc/ld.so.conf.d/exla-extra.conf
+    - echo /opt/cuda-extra-libs/nvidia/cuda_nvrtc/lib >> /etc/ld.so.conf.d/exla-extra.conf
+    - ldconfig
 
 run: "run.py:Runner"

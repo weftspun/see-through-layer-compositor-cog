@@ -68,7 +68,7 @@ defmodule SeeThroughCompositor.Server do
     if Image.has_alpha?(image) do
       {:ok, image}
     else
-      Image.add_alpha(image)
+      Image.add_alpha(image, :opaque)
     end
   end
 

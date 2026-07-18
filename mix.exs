@@ -11,7 +11,18 @@ defmodule SeeThroughCompositor.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
-        see_through_compositor: [include_executables_for: [:unix]]
+        see_through_compositor: [
+          include_executables_for: [:unix],
+          steps: [:assemble, &Burrito.wrap/1],
+          burrito: [
+            # The cog GPU base image is Ubuntu 22.04 x86_64 (glibc), so
+            # only that target is built — Burrito otherwise defaults to
+            # building for every OS/arch it supports.
+            targets: [
+              linux_x86_64: [os: :linux, cpu: :x86_64]
+            ]
+          ]
+        ]
       ],
       description:
         "MCP server exposing See-Through's GPU (EXLA) alpha-compositing ops (blend_over / alpha_floor) as a Replicate cog model",
@@ -34,12 +45,13 @@ defmodule SeeThroughCompositor.MixProject do
       # wrong arity in runtime_callback_cuda.cc).
       {:exla, "~> 0.12.0"},
       {:image, "~> 0.71"},
-      # Hex release (not the git fork): our tool is a single fast GPU tensor
-      # pass, so the hex release's 10s tools/call timeout — too short for
-      # easy-diffusion-mcp's slow SD inference — isn't a concern here.
-      {:ex_mcp, "~> 0.12"},
+      # weftspun's fork (not the Hex release): the Hex-published ex_mcp
+      # 0.12.0 has no ExMCP.Server.DSL module (the `tool`/`param`/`run`
+      # DSL this server uses only exists in the fork's lib/ex_mcp/server/dsl.ex).
+      {:ex_mcp, github: "weftspun/ex_mcp", ref: "fd535127e0ef198a974469a7a38325ee49dce531"},
       {:plug_cowboy, "~> 2.7"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:burrito, "~> 1.0"}
     ]
   end
 end
