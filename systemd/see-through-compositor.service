@@ -1,0 +1,18 @@
+[Unit]
+Description=See-Through layer compositor MCP server
+After=network-online.target nvidia-persistenced.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/see_through_compositor start
+Restart=on-failure
+RestartSec=2
+Environment=XLA_TARGET=cuda12
+Environment=PORT=5244
+Environment=LD_LIBRARY_PATH=/opt/cuda-extra-libs/nvidia/nvshmem/lib:/opt/cuda-extra-libs/nvidia/cuda_nvrtc/lib:/opt/cuda-extra-libs/nvidia/nccl/lib:/opt/cuda-extra-libs/nvidia/cudnn/lib
+DynamicUser=no
+User=root
+
+[Install]
+WantedBy=multi-user.target

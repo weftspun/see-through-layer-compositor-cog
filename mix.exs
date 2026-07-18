@@ -15,9 +15,11 @@ defmodule SeeThroughCompositor.MixProject do
           include_executables_for: [:unix],
           steps: [:assemble, &Burrito.wrap/1],
           burrito: [
-            # The cog GPU base image is Ubuntu 22.04 x86_64 (glibc), so
-            # only that target is built — Burrito otherwise defaults to
-            # building for every OS/arch it supports.
+            # Only linux_x86_64 is built — Burrito otherwise defaults to
+            # building for every OS/arch it supports. Targets the appliance
+            # image's base (quay.io/centos-bootc/centos-bootc:stream9,
+            # glibc 2.34 — EL9, per the ASWF VFX Reference Platform's
+            # CY2027 direction: https://vfxplatform.com/).
             #
             # custom_erts pins Burrito to the build machine's own ERTS
             # instead of its default "universal" precompiled ERTS, which
@@ -27,8 +29,7 @@ defmodule SeeThroughCompositor.MixProject do
             # can't resolve EXLA's precompiled (glibc-linked) CUDA XLA
             # extension's runtime deps (NVSHMEM, NVRTC, libcuda) — the
             # release must therefore be built inside a container matching
-            # the cog base image (Ubuntu 22.04 / glibc 2.35), not on an
-            # arbitrary dev machine.
+            # the target base image, not on an arbitrary dev machine.
             targets: [
               linux_x86_64: [
                 os: :linux,
