@@ -1,0 +1,15 @@
+visibility: "private"
+
+build:
+  gpu: true
+  cuda: "12.4"
+  system_packages:
+    - erlang
+    - elixir
+  python_version: "3.12"
+  run:
+    - mix local.hex --force && mix local.rebar --force
+    - XLA_TARGET=cuda12 mix deps.get
+    - XLA_TARGET=cuda12 MIX_ENV=prod mix release
+
+predict: "predict.py:Predictor"
