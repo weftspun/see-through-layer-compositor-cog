@@ -4,12 +4,29 @@ build:
   gpu: true
   cuda: "12.4"
   system_packages:
-    - erlang
-    - elixir
+    - unzip
+    - curl
+    - git
   python_version: "3.12"
+  python_requirements: requirements.txt
   run:
-    - mix local.hex --force && mix local.rebar --force
-    - XLA_TARGET=cuda12 mix deps.get
-    - XLA_TARGET=cuda12 MIX_ENV=prod mix release
+    # mix.exs requires Elixir ~> 1.20, which needs OTP 27+. Ubuntu 22.04's
+    # apt "erlang"/"elixir" packages are OTP 24 / Elixir 1.12, too old for
+    # either, so install precompiled builds of both directly.
+    - curl -fsSL -o /tmp/otp.tar.gz https://builds.hex.pm/builds/otp/ubuntu-22.04/OTP-29.0.3.tar.gz
+    - mkdir -p /usr/local/lib/erlang && tar -xzf /tmp/otp.tar.gz -C /usr/local/lib/erlang --strip-components=1 && rm /tmp/otp.tar.gz
+    - cd /usr/local/lib/erlang && ./Install -minimal /usr/local/lib/erlang
+    - for f in /usr/local/lib/erlang/bin/*; do ln -sf "$f" /usr/local/bin/; done
+    - curl -fsSL -o /tmp/elixir-otp-29.zip https://github.com/elixir-lang/elixir/releases/download/v1.20.2/elixir-otp-29.zip
+    - unzip -q /tmp/elixir-otp-29.zip -d /usr/local && rm /tmp/elixir-otp-29.zip
+    # Cog's build.run commands execute before the project source is copied
+    # into the image (COPY . /src happens last, unconditionally, and cog.yaml
+    # has no field to reorder that) — so the release is built here from the
+    # already-pushed repo, keeping the compile out of setup() at container
+    # start. Any local change must be pushed before `cog build` picks it up.
+    - git clone --depth 1 https://github.com/weftspun/see-through-layer-compositor-cog /build-src
+    - cd /build-src && mix local.hex --force && mix local.rebar --force
+    - cd /build-src && XLA_TARGET=cuda12 mix deps.get
+    - cd /build-src && XLA_TARGET=cuda12 MIX_ENV=prod mix release
 
-predict: "predict.py:Predictor"
+run: "run.py:Runner"

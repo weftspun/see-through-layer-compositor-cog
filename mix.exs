@@ -7,7 +7,7 @@ defmodule SeeThroughCompositor.MixProject do
     [
       app: :see_through_compositor,
       version: @version,
-      elixir: "~> 1.15",
+      elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
@@ -29,7 +29,10 @@ defmodule SeeThroughCompositor.MixProject do
   defp deps do
     [
       {:nx, "~> 0.12"},
-      {:exla, "~> 0.12"},
+      # Pinned to the 0.12.x line: 0.13.0 (released 2026-07-17) ships a
+      # broken CUDA custom_calls build (OutputBuffer() called with the
+      # wrong arity in runtime_callback_cuda.cc).
+      {:exla, "~> 0.12.0"},
       {:image, "~> 0.71"},
       # Hex release (not the git fork): our tool is a single fast GPU tensor
       # pass, so the hex release's 10s tools/call timeout — too short for

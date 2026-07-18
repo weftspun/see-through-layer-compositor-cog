@@ -33,6 +33,6 @@ cog build
 cog predict -i background=@bg.png -i foreground=@layer.png -i alpha_threshold=0.06
 ```
 
-`predict.py` starts the compiled Elixir release, waits for `/health`, then
+`run.py` starts the compiled Elixir release, waits for `/health`, then
 proxies both images to the `composite_layers` MCP tool and returns the
 composited result.

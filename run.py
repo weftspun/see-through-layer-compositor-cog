@@ -1,5 +1,5 @@
-"""Cog predictor: launches the compiled Elixir MCP release and proxies
-predict() calls to its `composite_layers` MCP tool over HTTP."""
+"""Cog run interface: launches the compiled Elixir MCP release and proxies
+run() calls to its `composite_layers` MCP tool over HTTP."""
 
 import base64
 import subprocess
@@ -8,14 +8,17 @@ import time
 from pathlib import Path as PyPath
 
 import requests
-from cog import BasePredictor, Input, Path
+from cog import BaseRunner, Input, Path
 
-RELEASE_BIN = "/app/_build/prod/rel/see_through_compositor/bin/see_through_compositor"
+# Built during image `build.run` (see cog.yaml) from the pushed repo, not
+# from /src — Cog copies project source into /src only after build.run
+# commands finish, so the release can't be compiled from there at build time.
+RELEASE_BIN = "/build-src/_build/prod/rel/see_through_compositor/bin/see_through_compositor"
 BASE_URL = "http://localhost:5244"
 
 
-class Predictor(BasePredictor):
-    def setup(self):
+class Runner(BaseRunner):
+    def setup(self) -> None:
         self.proc = subprocess.Popen([RELEASE_BIN, "start"])
         self._wait_healthy(timeout=60)
 
@@ -31,7 +34,7 @@ class Predictor(BasePredictor):
             time.sleep(1)
         raise RuntimeError("see-through-layer-compositor-mcp server did not become healthy in time")
 
-    def predict(
+    def run(
         self,
         background: Path = Input(description="Background layer image"),
         foreground: Path = Input(description="Foreground RGBA layer image (composited on top)"),
