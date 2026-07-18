@@ -33,7 +33,16 @@ defmodule SeeThroughCompositor.MixProject do
               linux_x86_64: [
                 os: :linux,
                 cpu: :x86_64,
-                custom_erts: System.get_env("BURRITO_CUSTOM_ERTS", "/usr/local/lib/erlang")
+                custom_erts: System.get_env("BURRITO_CUSTOM_ERTS", "/usr/local/lib/erlang"),
+                # Burrito's is_cross_build?/1 unconditionally treats every
+                # Linux target as a cross-build (an assumption baked in for
+                # its musl-portable strategy), which triggers NIF
+                # recompilation via a zig cross-toolchain even here, where
+                # host and target are the same machine. That recompile
+                # produced a broken vix NIF (dlopen error: "/lib/x86_64-
+                # linux-gnu/libc.so: invalid ELF header") — skip it and
+                # keep the natively mix-compiled NIF instead.
+                skip_nifs: true
               ]
             ]
           ]
