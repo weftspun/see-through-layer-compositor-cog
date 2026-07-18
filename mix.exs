@@ -18,8 +18,23 @@ defmodule SeeThroughCompositor.MixProject do
             # The cog GPU base image is Ubuntu 22.04 x86_64 (glibc), so
             # only that target is built — Burrito otherwise defaults to
             # building for every OS/arch it supports.
+            #
+            # custom_erts pins Burrito to the build machine's own ERTS
+            # instead of its default "universal" precompiled ERTS, which
+            # gets its portability across glibc versions by patching the
+            # extracted beam.smp's ELF interpreter to a bundled musl libc
+            # shim. That shim doesn't consult glibc's ld.so.cache, so it
+            # can't resolve EXLA's precompiled (glibc-linked) CUDA XLA
+            # extension's runtime deps (NVSHMEM, NVRTC, libcuda) — the
+            # release must therefore be built inside a container matching
+            # the cog base image (Ubuntu 22.04 / glibc 2.35), not on an
+            # arbitrary dev machine.
             targets: [
-              linux_x86_64: [os: :linux, cpu: :x86_64]
+              linux_x86_64: [
+                os: :linux,
+                cpu: :x86_64,
+                custom_erts: System.get_env("BURRITO_CUSTOM_ERTS", "/usr/local/lib/erlang")
+              ]
             ]
           ]
         ]
